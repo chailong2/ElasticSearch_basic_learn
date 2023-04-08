@@ -8,12 +8,15 @@ import cn.itcast.hotel.pojo.RequestParam;
 import cn.itcast.hotel.service.IHotelService;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
@@ -30,6 +33,7 @@ import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.springframework.stereotype.Service;
+
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -182,6 +186,35 @@ public class HotelService extends ServiceImpl<HotelMapper, Hotel> implements IHo
             result.add(text);
         }
         return result;
+    }
+
+    @Override
+    public void insertByid(Long id) {
+        //根据ID先查询酒店数据
+        Hotel hotel = getById(id);
+        HotelDoc hotelDoc=new HotelDoc(hotel);
+        //准备request
+        IndexRequest request=new IndexRequest("hotel").id(hotel.getId().toString());
+        //准备DSL
+        request.source(JSON.toJSONString(hotelDoc), XContentType.JSON);
+        //发送请求
+        try {
+            client.index(request,RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteByid(Long id) {
+        //获取request
+        DeleteRequest request=new DeleteRequest("hotel", String.valueOf(id));
+        //准备发送请求
+        try {
+            client.delete(request,RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private List<String> getAggByname(Aggregations aggregations,String name) {

@@ -16,4 +16,8 @@ public interface IHotelService extends IService<Hotel> {
     Map<String , List<String>> filters(RequestParam param) throws IOException;
 
     List<String> getSuggestions(String prefix) throws IOException;
+
+    void insertByid(Long id);
+
+    void deleteByid(Long id);
 }
